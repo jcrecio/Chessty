@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <MinimumVisualStudioVersion>10.0</MinimumVisualStudioVersion>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{84A7D085-9546-4683-B8F3-8EDE8C6401B4}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Chessty</RootNamespace>
+    <AssemblyName>Chessty</AssemblyName>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <FileAlignment>512</FileAlignment>
+    <ProjectTypeGuids>{786C830F-07A1-408B-BD7F-6EE04809D6DB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <TargetFrameworkProfile>Profile344</TargetFrameworkProfile>
+    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- A reference to the entire .NET Framework is automatically included -->
+    <Folder Include="Exception\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Contracts\INotPawnOrKingPiece.cs" />
+    <Compile Include="AI\AIManager.cs" />
+    <Compile Include="Contracts\IVectorize.cs" />
+    <Compile Include="Enumeration\PieceIdentifiers.cs" />
+    <Compile Include="Hash\HashEntry.cs" />
+    <Compile Include="Matrix\Matrix.cs" />
+    <Compile Include="Movement\KingMove.cs" />
+    <Compile Include="Movement\Vector.cs" />
+    <Compile Include="Movement\Operator.cs" />
+    <Compile Include="Movement\PawnMove.cs" />
+    <Compile Include="Pieces\Bishop.cs" />
+    <Compile Include="Pieces\Black\BlackBishop.cs" />
+    <Compile Include="Pieces\Black\BlackKing.cs" />
+    <Compile Include="Pieces\Black\BlackKnight.cs" />
+    <Compile Include="Pieces\Black\BlackQueen.cs" />
+    <Compile Include="Pieces\Black\BlackRock.cs" />
+    <Compile Include="Pieces\King.cs" />
+    <Compile Include="Pieces\Knight.cs" />
+    <Compile Include="Pieces\Queen.cs" />
+    <Compile Include="Pieces\Rock.cs" />
+    <Compile Include="Pieces\White\WhiteBishop.cs" />
+    <Compile Include="Pieces\White\WhiteKing.cs" />
+    <Compile Include="Pieces\White\WhiteKnight.cs" />
+    <Compile Include="Pieces\White\WhiteQueen.cs" />
+    <Compile Include="Pieces\White\WhiteRock.cs" />
+    <Compile Include="Log\Ply.cs" />
+    <Compile Include="Program.cs" />
+    <Compile Include="Search\SearchParameter.cs" />
+    <Compile Include="Structure\Board.cs" />
+    <Compile Include="Enumeration\Global.cs" />
+    <Compile Include="Abstract\Piece.cs" />
+    <Compile Include="Game.cs" />
+    <Compile Include="Movement\Move.cs" />
+    <Compile Include="Pieces\Black\BlackPawn.cs" />
+    <Compile Include="Pieces\Pawn.cs" />
+    <Compile Include="Pieces\White\WhitePawn.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Hash\RefutationEntry.cs" />
+    <Compile Include="Log\Sequence.cs" />
+    <Compile Include="Log\Serializer.cs" />
+    <Compile Include="Structure\Square.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>
