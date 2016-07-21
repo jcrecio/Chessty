@@ -23,7 +23,7 @@
     }
     public enum PieceValue
     {
-        Pawn = 100, Knight = 320, Bishop = 325, Rock = 525, Queen = 975, King = 20000
+        Empty = 0, Pawn = 100, Knight = 320, Bishop = 325, Rock = 525, Queen = 975, King = 20000
     }
     public enum PawnMoveType
     {

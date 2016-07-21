@@ -4,19 +4,20 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Runtime.Serialization;
-    using Chessty.Abstract;
-    using Chessty.Enumeration;
-    using Chessty.Hash;
-    using Chessty.Matrix;
-    using Chessty.Movement;
-    using Chessty.Pieces;
-    using Chessty.Pieces.Black;
-    using Chessty.Pieces.White;
-    using Chessty.Structure;
+    using Abstract;
+    using Enumeration;
+    using Hash;
+    using Matrix;
+    using Movement;
+    using Pieces;
+    using Pieces.Black;
+    using Pieces.White;
+    using Structure;
 
     public class AIManager
     {
         #region Const
+        private const int MiddleGameMaterial = 21700;
         private const float Minimum = -20000;
         private const float Maximum = 20000;
         private const float IntValueKing = 20000;
@@ -45,11 +46,11 @@
         private const int MoveCannotBeDone = 0;
         private const int MoveIsNormal = 1;
         private const int MoveIsCapture = 2;
+        private const int MoveIsCastle = 4;
 
         private const bool MaxNode = true;
         private const bool MinNode = false;
 
-        private static int here = 0;
         #endregion
 
         #region Properties
@@ -161,6 +162,7 @@
 
         public bool EnableTranspositionTable { get; set; }
         public bool PositionalEvaluationConsideration { get; set; }
+
         public readonly int[] ColumnsAmountPawnsDefaultValue = { 0, 0, 0, 0, 0, 0, 0, 0 };
         public readonly int[] ColumnsAmountPawnsOppositeValue = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -327,7 +329,6 @@
             #endregion
         }
 
-        // 0 cannot be done, 1 normal, >=2 capture
         public int GetMoveByPriority(Move move, Board board, Square square, bool inCheckBeforeMove)
         {
             var squareFromColumn = square.Column;
@@ -419,7 +420,7 @@
 
         private int GetKingMoveByPriority(Move move, Board board, Square square, bool inCheckBeforeMove, Piece pieceFrom)
         {
-            if (!inCheckBeforeMove && move.MoveType == 2 && (move as KingMove).Castling)
+            if (!inCheckBeforeMove && move.MoveType == MoveIsCapture && (move as KingMove).Castling)
             {
                 var canCastle = pieceFrom.Color == PieceColor.White
                     ? !board.WhiteHasCastled
@@ -427,20 +428,28 @@
 
                 if (canCastle)
                 {
-                    var row = square.CurrentPiece.Color == PieceColor.White ? 0 : 7;
+                    var row = square.CurrentPiece.Color == PieceColor.White ? 0 : BoardSize.MaxRowIndex;
 
-                    if ((move.Column == 2 && board.GetSquare(5, row).CurrentPiece == null
-                         && board.GetSquare(6, row).CurrentPiece == null)
-                        || (move.Column == -2 && board.GetSquare(1, row).CurrentPiece == null
-                            && board.GetSquare(2, row).CurrentPiece == null
-                            && board.GetSquare(3, row).CurrentPiece == null))
+                    if (this.IsCorrectCastle(board, move, row))
                     {
-                        return 4;
+                        return MoveIsCastle;
                     }
                 }
             }
 
-            return 0;
+            return MoveCannotBeDone;
+        }
+
+        private bool IsCorrectCastle(Board board, Move move, int row)
+        {
+            return (move.Column == 2
+                        && board.GetSquare(5, row).CurrentPiece == null
+                        && board.GetSquare(6, row).CurrentPiece == null)
+
+                    || (move.Column == -2
+                        && board.GetSquare(1, row).CurrentPiece == null
+                        && board.GetSquare(2, row).CurrentPiece == null
+                        && board.GetSquare(3, row).CurrentPiece == null);
         }
 
         private int GetPawnMoveByPriority(Move move, Board board, Square squareTo, PieceColor colorFrom, Piece pieceFrom)
@@ -491,6 +500,8 @@
 
             return 0;
         }
+
+
 
         private bool IsAttacked(Board board, Square square, int turn, bool turnEqualOne)
         {
@@ -718,6 +729,8 @@
             return this.IsAttacked(board, kingSquare, turn, turnEqualOne);
         }
 
+
+
         private List<Operator> GetOrderedLegalCandidates(Board board, bool turnEqualOne, bool inCheckBeforeMove, int depth)
         {
             var nonZeroOperators = this.GetLegalCandidates(board, turnEqualOne, inCheckBeforeMove, depth);
@@ -727,9 +740,9 @@
 
         public IEnumerable<Operator> GetLegalCandidates(Board board, bool turnEqualOne, bool inCheckBeforeMove, int depth)
         {
-            var nonZeroOperators = this.GetPossibleCandidates(board, turnEqualOne, inCheckBeforeMove, depth);
+            var availableOperators = this.GetPossibleCandidates(board, turnEqualOne, inCheckBeforeMove, depth);
 
-            return nonZeroOperators.Where(c => c.Type > 0);
+            return availableOperators.Where(c => c.Type > 0);
         } 
 
         private List<Operator> GetPossibleCandidates(Board board, bool turnEqualOne, bool inCheckBeforeMove, int depth)
@@ -768,6 +781,8 @@
 
             return candidates;
         }
+
+
 
         public Square MakeMove(
             Board board,
@@ -864,7 +879,7 @@
                 board.BlackSquaresWithPieces.Add(nextSquare.Identifier, nextSquare);
                 board.WhiteSquaresWithPieces.Remove(nextSquare.Identifier);
 
-                if (board.MaterialWhite <= 21700 && board.MaterialBlack <= 21700)
+                if (board.MaterialWhite <= MiddleGameMaterial && board.MaterialBlack <= MiddleGameMaterial)
                 {
                     GamePhase = GamePhase.EndGame;
 
@@ -896,7 +911,7 @@
                 board.BlackHasCastled = true;
             }
 
-            var square = dir == 0 ? board.GetSquare(0, row) : board.GetSquare(7, row);
+            var square = dir == 0 ? board.GetSquare(0, row) : board.GetSquare(BoardSize.MaxColumnIndex, row);
             var move = new Move(dir == 0 ? 3 : -2, 0);
             var op = new Operator(move, square);
             var color = square.CurrentPiece.Color;
@@ -1050,9 +1065,11 @@
             }
         }
 
+
+
         public Operator Search(Board board, int turn, int depth)
         {
-            Operator value;
+            Operator value = this.Search(board, depth, Minimum, Maximum, turn); ;
             //if (!previousresult.Equals(Minimum))
             //{
             //    value = this.Search(board, depth, previousresult - (float)PieceValue.Rock, previousresult + (float)PieceValue.Rock, turn);
@@ -1060,7 +1077,7 @@
             //}
             //else
             //{
-                value = this.Search(board, depth, Minimum, Maximum, turn);
+                //value = this.Search(board, depth, Minimum, Maximum, turn);
             //}
 
             KillerMovesTable.Clear();
@@ -1213,17 +1230,21 @@
                     {
                         case NodeType.Exact:
                             return hashEntry.Score;
+
                         case NodeType.LowerBound:
                             if (hashEntry.Score > alpha)
                             {
                                 alpha = hashEntry.Score;
                             }
+
                             break;
+
                         case NodeType.UpperBound:
                             if (hashEntry.Score < beta)
                             {
                                 beta = hashEntry.Score;
                             }
+
                             break;
                     }
 
@@ -1329,6 +1350,8 @@
 
             return bestValue;
         }
+
+
 
         private void SetHashEntry(Board board, long hashBoard, int depth, float value, NodeType nodeType)
         {
@@ -1470,7 +1493,7 @@
         {
             float value = 0;
 
-            // positional values
+            // Positional values
             foreach (var square in squares)
             {
                 //int[] defendedBy;
