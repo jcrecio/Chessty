@@ -39,6 +39,32 @@
         }
 
         public abstract int PieceIdentifier { get; }
-        
+
+        public int GetMoveByPriority(Square squareTo)
+        {
+            var valuePieceInSquareTo = squareTo.GetPieceValue();
+
+            if (valuePieceInSquareTo == 0)
+            {
+                return Globals.MoveIsNormal;
+            }
+
+            if (Value == PieceValue.Queen)
+            {
+                return Globals.MoveIsNormal;
+            }
+
+            if (valuePieceInSquareTo > Value)
+            {
+                return 2 + valuePieceInSquareTo - Value;
+            }
+
+            return Globals.MoveIsCapture;
+        }
+
+        public bool SameColorAs(Piece piece)
+        {
+            return this.Color == piece.Color;
+        }
     }
 }

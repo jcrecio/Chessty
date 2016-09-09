@@ -997,7 +997,7 @@
 
             var operator1 = new Operator(move, square);
 
-            if (this.Game.AiManager.GetMoveByPriority(move, this.Game.Board, square, this.Game.AiManager.IsCheck(this.Game.Board, this.Game.Turn, this.Game.Turn == 1)) != 0)
+            if (this.Game.AiManager.GetMovePriority(move, this.Game.Board, square, this.Game.AiManager.IsCheck(this.Game.Board, this.Game.Turn, this.Game.Turn == 1)) != 0)
             {
                 var longHash = this.Game.Board.HashBoard;
 

@@ -1,9 +1,9 @@
 ﻿namespace Chessty.Contracts
 {
-    using Chessty.Movement;
+    using Movement;
 
     public interface IVectorize
     {
-        Vector GetUnitarianVector();
+        Move GetUnitarian();
     }
 }

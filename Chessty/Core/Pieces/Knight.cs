@@ -50,5 +50,22 @@ namespace Chessty.Pieces
                 return (int)PieceIdentifiers.Knight;
             }
         }
+
+        public int GetMoveByPriorityTo(Square square)
+        {
+            var valuePieceInSquareTo = square.GetPieceValue();
+
+            if (valuePieceInSquareTo == 0)
+            {
+                return Globals.MoveIsNormal;
+            }
+
+            if (valuePieceInSquareTo > PieceValue.Knight)
+            {
+                return 2 + valuePieceInSquareTo - PieceValue.Knight;
+            }
+
+            return Globals.MoveIsCapture;
+        }
     }
 }

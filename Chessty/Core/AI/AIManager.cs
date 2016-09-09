@@ -43,10 +43,7 @@
         private const int ValueForSamePieceMoved = 10;
         private const int ReductionNullMoveDepth = 2;
 
-        private const int MoveCannotBeDone = 0;
-        private const int MoveIsNormal = 1;
-        private const int MoveIsCapture = 2;
-        private const int MoveIsCastle = 4;
+
 
         private const bool MaxNode = true;
         private const bool MinNode = false;
@@ -329,185 +326,50 @@
             #endregion
         }
 
-        public int GetMoveByPriority(Move move, Board board, Square square, bool inCheckBeforeMove)
+        public int GetMovePriority(Move move, Board board, Square square, bool inCheckBeforeMove)
         {
-            var squareFromColumn = square.Column;
-            var squareFromRow = square.Row;
-
-            var squareToColumn = squareFromColumn + move.Column;
-            var squareToRow = squareFromRow + move.Row;
+            var squareToColumn = square.Column + move.Column;
+            var squareToRow = square.Row + move.Row;
 
             if (!board.IsValidSquare(squareToColumn, squareToRow))
             {
-                return MoveCannotBeDone;
+                return Globals.MoveCannotBeDone;
             }
-
-            var pieceFrom = square.CurrentPiece;
-            var colorFrom = pieceFrom.Color;
 
             var squareTo = board.GetSquare(squareToColumn, squareToRow);
-            var squareToCurrentPieceIsNull = squareTo.CurrentPiece == null;
 
-            if (!squareToCurrentPieceIsNull && colorFrom == squareTo.CurrentPiece.Color)
+            if (!square.PieceCanMoveToSquare(squareTo))
             {
-                return MoveCannotBeDone;
+                return Globals.MoveCannotBeDone;
+            }
+            if (square.CurrentPiece.Value == PieceValue.Knight)
+            {
+                return ((Knight)(square.CurrentPiece)).GetMoveByPriorityTo(squareTo);
+            }
+            if (square.CurrentPiece.Value == PieceValue.Pawn)
+            {
+                return ((Pawn)(square.CurrentPiece)).GetMoveByPriority(move, board, squareTo, square.CurrentPiece);
             }
 
-            if (pieceFrom.Value == PieceValue.Pawn)
-            {
-                return this.GetPawnMoveByPriority(move, board, squareTo, colorFrom, pieceFrom);
-            }
-
-            if (pieceFrom.Value == PieceValue.King)
-            {
-                var kingCanMove =  this.GetKingMoveByPriority(move, board, square, inCheckBeforeMove, pieceFrom);
-                if (kingCanMove != MoveCannotBeDone)
-                {
-                    return kingCanMove;
-                }
-            }
-
-            var valuePieceInSquareTo = squareToCurrentPieceIsNull ? 0 :squareTo.CurrentPiece.Value;
-
-            if (pieceFrom.Value == PieceValue.Knight)
-            {
-                return this.GetKnightMoveByPriority(valuePieceInSquareTo);
-            }
-
-            var iterableMove = move.GetUnitarianVector() as Move; //TODO: IMPROVE SPEED
+            var iterableMove = move.GetUnitarian();
             if (board.SquaresRangeEmpty(squareTo.Row, squareTo.Column, iterableMove, square))
             {
-                return this.GetMoveNormalByPriority(valuePieceInSquareTo, pieceFrom);
-            }
-
-            return MoveCannotBeDone;
-        }
-
-        private int GetMoveNormalByPriority(PieceValue valuePieceInSquareTo, Piece pieceFrom)
-        {
-            if (valuePieceInSquareTo == 0)
-            {
-                return MoveIsNormal;
-            }
-
-            if (pieceFrom.Value == PieceValue.Queen)
-            {
-                return MoveIsNormal;
-            }
-
-            if (valuePieceInSquareTo > pieceFrom.Value)
-            {
-                return 2 + valuePieceInSquareTo - pieceFrom.Value;
-            }
-
-            return MoveIsCapture;
-        }
-
-        private int GetKnightMoveByPriority(PieceValue valuePieceInSquareTo)
-        {
-            if (valuePieceInSquareTo == 0)
-            {
-                return MoveIsNormal;
-            }
-
-            if (valuePieceInSquareTo > PieceValue.Knight)
-            {
-                return 2 + valuePieceInSquareTo - PieceValue.Knight;
-            }
-
-            return MoveIsCapture;
-        }
-
-        private int GetKingMoveByPriority(Move move, Board board, Square square, bool inCheckBeforeMove, Piece pieceFrom)
-        {
-            if (!inCheckBeforeMove && move.MoveType == MoveIsCapture && (move as KingMove).Castling)
-            {
-                var canCastle = pieceFrom.Color == PieceColor.White
-                    ? !board.WhiteHasCastled
-                    : !board.BlackHasCastled && (pieceFrom as King).Castle;
-
-                if (canCastle)
+                if (square.CurrentPiece.Value == PieceValue.King)
                 {
-                    var row = square.CurrentPiece.Color == PieceColor.White ? 0 : BoardSize.MaxRowIndex;
-
-                    if (this.IsCorrectCastle(board, move, row))
-                    {
-                        return MoveIsCastle;
-                    }
+                    return ((King)(square.CurrentPiece)).GetMoveByPriority(move, board, square, inCheckBeforeMove);
                 }
+
+                return square.CurrentPiece.GetMoveByPriority(squareTo);
             }
 
-            return MoveCannotBeDone;
+            return Globals.MoveCannotBeDone;
         }
-
-        private bool IsCorrectCastle(Board board, Move move, int row)
-        {
-            return (move.Column == 2
-                        && board.GetSquare(5, row).CurrentPiece == null
-                        && board.GetSquare(6, row).CurrentPiece == null)
-
-                    || (move.Column == -2
-                        && board.GetSquare(1, row).CurrentPiece == null
-                        && board.GetSquare(2, row).CurrentPiece == null
-                        && board.GetSquare(3, row).CurrentPiece == null);
-        }
-
-        private int GetPawnMoveByPriority(Move move, Board board, Square squareTo, PieceColor colorFrom, Piece pieceFrom)
-        {
-            var pawnMove = move as PawnMove;
-            var colorEqualsWhite = colorFrom == PieceColor.White;
-
-            Pawn pawnFrom;
-            if (colorEqualsWhite)
-            {
-                pawnFrom = pieceFrom as WhitePawn;
-            }
-            else
-            {
-                pawnFrom = pieceFrom as BlackPawn;
-            }
-
-            var pawnType = pawnMove.Type;
-            var pieceTo = squareTo.CurrentPiece;
-
-            if ((pawnType == PawnMoveType.EatLeft || pawnType == PawnMoveType.EatRight)
-                && (pieceTo != null && pieceTo.Color != colorFrom))
-            {
-                return 3;//+ pieceTo.Value - PieceValue.Pawn;
-            }
-
-            if ((pawnType == PawnMoveType.InPassantLeft && pawnFrom.IsPassantLeft) && pieceTo == null)
-            {
-                return 0;
-            }
-
-            if ((pawnType == PawnMoveType.InPassantRight && pawnFrom.IsPassantRight) && pieceTo == null)
-            {
-                return 0;
-            }
-
-            if (pawnType == PawnMoveType.AdvanceOne && pieceTo == null)
-                    
-            {
-                return 1;
-            }
-
-            if ((pawnType == PawnMoveType.AdvanceTwo && pawnFrom.AdvanceTwo)&& board.GetSquare(squareTo.Column, colorEqualsWhite ? 2 : 5).CurrentPiece == null
-                    && pieceTo == null)
-            {
-                return 2;
-            }
-
-            return 0;
-        }
-
-
 
         private bool IsAttacked(Board board, Square square, int turn, bool turnEqualOne)
         {
             var oppositeColor = turnEqualOne ? PieceColor.Black : PieceColor.White;
 
-            var adjacents = board.GetAdjacentSquares(square, typeof (Direction));
+            var adjacents = board.GetAdjacentSquares(square, typeof(Direction));
 
             foreach (var adjacent in adjacents)
             {
@@ -576,7 +438,7 @@
                 }
             }
 
-            var adjacentsKnight = board.GetAdjacentSquares(square, typeof (KnightDirection));
+            var adjacentsKnight = board.GetAdjacentSquares(square, typeof(KnightDirection));
             foreach (var adjacent in adjacentsKnight)
             {
                 var currentPiece = adjacent.CurrentPiece;
@@ -740,18 +602,18 @@
 
         public IEnumerable<Operator> GetLegalCandidates(Board board, bool turnEqualOne, bool inCheckBeforeMove, int depth)
         {
-            var availableOperators = this.GetPossibleCandidates(board, turnEqualOne, inCheckBeforeMove, depth);
+            var availableOperators = GetPossibleCandidates(board, turnEqualOne, inCheckBeforeMove, depth);
 
-            return availableOperators.Where(c => c.Type > 0);
-        } 
+            return availableOperators.Where(IsLegal);
+        }
 
         private List<Operator> GetPossibleCandidates(Board board, bool turnEqualOne, bool inCheckBeforeMove, int depth)
         {
             var validOperators = this.GetCandidates(board, turnEqualOne, depth);
-           
+
             foreach (var validOperator in validOperators)
             {
-                validOperator.Type = this.GetMoveByPriority(validOperator.Move, board,  validOperator.Square, inCheckBeforeMove);
+                validOperator.Type = this.GetMovePriority(validOperator.Move, board, validOperator.Square, inCheckBeforeMove);
             }
 
             return validOperators;
@@ -781,6 +643,15 @@
 
             return candidates;
         }
+
+        private bool IsLegal(Operator move)
+        {
+            return move.Type > 0;
+        }
+
+
+
+
 
 
 
@@ -1012,7 +883,7 @@
             var color = sourceSquare.CurrentPiece.Color;
             if (color == PieceColor.White)
             {
-                board.WhiteSquaresWithPieces.Remove(nextSquare.Identifier); 
+                board.WhiteSquaresWithPieces.Remove(nextSquare.Identifier);
                 GamePhase = previousPhase;
                 if (previousPhase != GamePhase.EndGame)
                 {
@@ -1077,7 +948,7 @@
             //}
             //else
             //{
-                //value = this.Search(board, depth, Minimum, Maximum, turn);
+            //value = this.Search(board, depth, Minimum, Maximum, turn);
             //}
 
             KillerMovesTable.Clear();
@@ -1174,33 +1045,33 @@
             switch (currentPieceValue)
             {
                 case PieceValue.Pawn:
-                {
-                    var pawn = currentPiece as Pawn;
-                    previousValues.AddRange(new[] {pawn.IsPassantLeft, pawn.IsPassantRight, pawn.AdvanceTwo});
-                }
+                    {
+                        var pawn = currentPiece as Pawn;
+                        previousValues.AddRange(new[] { pawn.IsPassantLeft, pawn.IsPassantRight, pawn.AdvanceTwo });
+                    }
                     break;
                 case PieceValue.King:
-                {
-                    var king = currentPiece as King;
-                    previousValues.AddRange(new[] {king.Castle});
-                }
+                    {
+                        var king = currentPiece as King;
+                        previousValues.AddRange(new[] { king.Castle });
+                    }
                     break;
                 case PieceValue.Rock:
-                {
+                    {
                         var king =
                             (turnEqualOne ? board.WhiteKingPosition.CurrentPiece : board.BlackKingPosition.CurrentPiece)
                                 as King;
-                        previousValues.AddRange(new[] {king.Castle});
-                }
+                        previousValues.AddRange(new[] { king.Castle });
+                    }
                     break;
                 case PieceValue.Bishop:
-                    previousValues.AddRange(new[] {(currentPiece as Bishop).Developed});
+                    previousValues.AddRange(new[] { (currentPiece as Bishop).Developed });
                     break;
                 case PieceValue.Knight:
-                    previousValues.AddRange(new[] {(currentPiece as Knight).Developed});
+                    previousValues.AddRange(new[] { (currentPiece as Knight).Developed });
                     break;
                 case PieceValue.Queen:
-                    previousValues.AddRange(new[] {(currentPiece as Queen).Developed});
+                    previousValues.AddRange(new[] { (currentPiece as Queen).Developed });
                     break;
             }
 
@@ -1314,7 +1185,7 @@
                     }
 
                     if (bestValue >= beta)
-                    {                        
+                    {
                         KillerMovesTable[hashBoard] = new RefutationEntry { HashBoard = hashBoard, Operator = candidate.Clone(), Depth = depth };
                         break;
                     }
@@ -1451,7 +1322,7 @@
             var posMax = this.PositionalEvaluation(board, turn, turnEqualsOne, squares, columnsAmountPawns, kingSquareOpposite, null, false);
             var posMin = this.PositionalEvaluation(board, -turn, !turnEqualsOne, squaresOpposites, columnsAmountPawnsOpposite, kingSquare, null, isCheckOpposite);
 
-            return (substractOppositePositional 
+            return (substractOppositePositional
                  ? (posMax - posMin)
                  : posMax);
         }
@@ -1585,7 +1456,7 @@
                         value += ValueForQueenInSameColumnThanOppositeKing;
                     }
 
-                    if (square.GetUnitarianVector().Equals(kingSquareOpposite.GetUnitarianVector()))
+                    if (square.GetUnitarian().Equals(kingSquareOpposite.GetUnitarian()))
                     {
                         value += ValueForQueenInSameDiagonalThanOppositeKing;
                     }
@@ -1625,7 +1496,7 @@
                                  ? this.WhiteBishopMatrix.GetValue(square.Column, square.Row)
                                  : this.BlackBishopMatrix.GetValue(square.Column, square.Row);
 
-                    if (square.GetUnitarianVector().Equals(kingSquareOpposite.GetUnitarianVector()))
+                    if (square.GetUnitarian().Equals(kingSquareOpposite.GetUnitarian()))
                     {
                         value += ValueForBishopInSameDiagonalThanOppositeKing;
                     }

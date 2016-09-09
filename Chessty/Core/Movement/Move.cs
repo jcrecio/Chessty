@@ -3,7 +3,7 @@
     using System;
     using Chessty.Contracts;
     using System.Collections.Generic;
-    public class Move : Vector, IVectorize
+    public class Move : Vector, IVectorize, IIsDirectionable
     {
         public int MoveType { get; set; } // 0 normal, 1 pawn, 2 king
 
@@ -37,7 +37,7 @@
             this.Row = rows;
         }
 
-        public Vector GetUnitarianVector()
+        public Move GetUnitarian()
         {
             return new Move(this.Column == 0 ? 0 : Math.Abs(this.Column) / this.Column, this.Row == 0 ? 0 : Math.Abs(this.Row) / this.Row);
         }

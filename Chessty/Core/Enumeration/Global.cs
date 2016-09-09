@@ -8,7 +8,13 @@
         public static int MaxColumnIndex = 7;
 
     }
-
+    public static class Globals
+    {
+        public const int MoveCannotBeDone = 0;
+        public const int MoveIsNormal = 1;
+        public const int MoveIsCapture = 2;
+        public const int MoveIsCastle = 4;
+    }
     public enum PieceColor
     {
         White, Black

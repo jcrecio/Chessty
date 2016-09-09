@@ -48,6 +48,7 @@
     <Compile Include="Enumeration\PieceIdentifiers.cs" />
     <Compile Include="Hash\HashEntry.cs" />
     <Compile Include="Matrix\Matrix.cs" />
+    <Compile Include="Contracts\IIsDirectionable.cs" />
     <Compile Include="Movement\KingMove.cs" />
     <Compile Include="Movement\Vector.cs" />
     <Compile Include="Movement\Operator.cs" />

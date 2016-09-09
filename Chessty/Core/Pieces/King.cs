@@ -62,6 +62,39 @@ namespace Chessty.Pieces
             }
         }
 
+        public int GetMoveByPriority(Move move, Board board, Square square, bool inCheckBeforeMove)
+        {
+            if (!inCheckBeforeMove && move.MoveType == Globals.MoveIsCapture && (move as KingMove).Castling)
+            {
+                var canCastle = square.CurrentPiece.Color == PieceColor.White
+                    ? !board.WhiteHasCastled
+                    : !board.BlackHasCastled && (square.CurrentPiece as King).Castle;
+
+                if (canCastle)
+                {
+                    var row = square.CurrentPiece.Color == PieceColor.White ? 0 : BoardSize.MaxRowIndex;
+
+                    if (this.IsCorrectCastle(board, move, row))
+                    {
+                        return Globals.MoveIsCastle;
+                    }
+                }
+            }
+
+            return base.GetMoveByPriority(square);
+        }
+
+        private bool IsCorrectCastle(Board board, Move move, int row)
+        {
+            return (move.Column == 2
+                        && board.GetSquare(5, row).CurrentPiece == null
+                        && board.GetSquare(6, row).CurrentPiece == null)
+
+                    || (move.Column == -2
+                        && board.GetSquare(1, row).CurrentPiece == null
+                        && board.GetSquare(2, row).CurrentPiece == null
+                        && board.GetSquare(3, row).CurrentPiece == null);
+        }
         public override int PieceIdentifier
         {
             get

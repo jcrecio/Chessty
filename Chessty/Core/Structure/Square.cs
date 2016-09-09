@@ -1,12 +1,11 @@
 ﻿namespace Chessty.Structure
 {
     using System;
-    using System.Collections.Generic;
     using Chessty.Abstract;
-    using Chessty.Contracts;
     using Chessty.Movement;
+    using Enumeration;
 
-    public class Square : Vector, IVectorize
+    public class Square : Vector
     {
         public Piece CurrentPiece { get; set; }
 
@@ -53,7 +52,7 @@
             return "____|";
         }
 
-        public Vector GetUnitarianVector()
+        public Vector GetUnitarian()
         {
             return new Square(this.Column == 0 ? 0 : Math.Abs(this.Column) / this.Column, this.Row == 0 ? 0 : Math.Abs(this.Row) / this.Row);
         }
@@ -61,6 +60,19 @@
         public Square Clone()
         {
             return new Square(this.Column, this.Row);
+        }
+
+        public bool PieceCanMoveToSquare(Square squareTo)
+        {
+            var squareIsFree = squareTo.CurrentPiece == null;
+            return squareIsFree || !CurrentPiece.SameColorAs(squareTo.CurrentPiece);
+        }
+
+        public PieceValue GetPieceValue()
+        {
+            return this.CurrentPiece != null 
+                ? this.CurrentPiece.Value 
+                : PieceValue.Empty;
         }
     }
 }
