@@ -40,8 +40,13 @@
 
         public abstract int PieceIdentifier { get; }
 
-        public int GetMoveByPriority(Square squareTo)
+        public virtual int GetMoveByPriority(Play play, Square squareTo, Func<Play, Square, bool> precondition = null)
         {
+            if (precondition != null && !precondition(play, squareTo))
+            {
+                return Globals.MoveCannotBeDone;
+            }
+
             var valuePieceInSquareTo = squareTo.GetPieceValue();
 
             if (valuePieceInSquareTo == 0)

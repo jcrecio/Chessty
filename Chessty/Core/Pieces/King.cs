@@ -25,8 +25,8 @@ namespace Chessty.Pieces
             };
 
         private static readonly List<Move> ListMovesWithCastle = new List<Move> {
-                new KingMove(-2, 0),
-                new KingMove(2, 0),
+                new KingMove(-2, 0, true),
+                new KingMove(2, 0, true),
                 new KingMove(0, 1),
                 new KingMove(1, 1),
                 new KingMove(1, 0),
@@ -62,26 +62,31 @@ namespace Chessty.Pieces
             }
         }
 
-        public int GetMoveByPriority(Move move, Board board, Square square, bool inCheckBeforeMove)
+        public override int GetMoveByPriority(Play play, Square squareTo, Func<Play, Square, bool> precondition)
         {
-            if (!inCheckBeforeMove && move.MoveType == Globals.MoveIsCapture && (move as KingMove).Castling)
+            if (!precondition(play, squareTo))
             {
-                var canCastle = square.CurrentPiece.Color == PieceColor.White
-                    ? !board.WhiteHasCastled
-                    : !board.BlackHasCastled && (square.CurrentPiece as King).Castle;
+                return Globals.MoveCannotBeDone;
+            }
+            
+            if (!play.IsInCheck && play.Move.MoveType != Globals.MoveIsCapture && (play.Move as KingMove).Castling)
+            {
+                var canCastle = play.Square.CurrentPiece.Color == PieceColor.White
+                    ? !play.Board.WhiteHasCastled
+                    : !play.Board.BlackHasCastled && (play.Square.CurrentPiece as King).Castle;
 
                 if (canCastle)
                 {
-                    var row = square.CurrentPiece.Color == PieceColor.White ? 0 : BoardSize.MaxRowIndex;
+                    var row = play.Square.CurrentPiece.Color == PieceColor.White ? 0 : BoardSize.MaxRowIndex;
 
-                    if (this.IsCorrectCastle(board, move, row))
+                    if (this.IsCorrectCastle(play.Board, play.Move, row))
                     {
                         return Globals.MoveIsCastle;
                     }
                 }
             }
 
-            return base.GetMoveByPriority(square);
+            return base.GetMoveByPriority(play, squareTo);
         }
 
         private bool IsCorrectCastle(Board board, Move move, int row)

@@ -5,7 +5,7 @@
     using System.Collections.Generic;
     public class Move : Vector, IVectorize, IIsDirectionable
     {
-        public int MoveType { get; set; } // 0 normal, 1 pawn, 2 king
+        public int MoveType { get; set; } // 0 normal, 1 pawn, 2 king, 4 castle
 
         private class MoveCoordinatesContainer
         {

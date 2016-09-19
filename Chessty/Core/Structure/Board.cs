@@ -414,6 +414,11 @@
             return column >= 0 && column <= BoardSize.MaxColumnIndex && row >= 0 && row <= BoardSize.MaxRowIndex;
         }
 
+        public bool IsValidSquare(Square square)
+        {
+            return square.Column >= 0 && square.Column <= BoardSize.MaxColumnIndex && square.Row >= 0 && square.Row <= BoardSize.MaxRowIndex;
+        }
+
         public Square GetNearestSquare(Square square, int direction)
         {
             Move move = new Move(direction);

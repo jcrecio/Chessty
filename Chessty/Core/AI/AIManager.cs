@@ -16,6 +16,9 @@
 
     public class AIManager
     {
+
+        private int turn;
+
         #region Const
         private const int MiddleGameMaterial = 21700;
         private const float Minimum = -20000;
@@ -326,43 +329,29 @@
             #endregion
         }
 
-        public int GetMovePriority(Move move, Board board, Square square, bool inCheckBeforeMove)
+        public int GetMovePriority(Play play)
         {
-            var squareToColumn = square.Column + move.Column;
-            var squareToRow = square.Row + move.Row;
+            var squareToColumn = play.Square.Column + play.Move.Column;
+            var squareToRow = play.Square.Row + play.Move.Row;
 
-            if (!board.IsValidSquare(squareToColumn, squareToRow))
+            if (!play.Board.IsValidSquare(squareToColumn, squareToRow))
             {
                 return Globals.MoveCannotBeDone;
             }
 
-            var squareTo = board.GetSquare(squareToColumn, squareToRow);
+            var squareTo = play.Board.GetSquare(squareToColumn, squareToRow);
 
-            if (!square.PieceCanMoveToSquare(squareTo))
+            if (!play.Square.PieceCanMoveToSquare(squareTo))
             {
                 return Globals.MoveCannotBeDone;
             }
-            if (square.CurrentPiece.Value == PieceValue.Knight)
-            {
-                return ((Knight)(square.CurrentPiece)).GetMoveByPriorityTo(squareTo);
-            }
-            if (square.CurrentPiece.Value == PieceValue.Pawn)
-            {
-                return ((Pawn)(square.CurrentPiece)).GetMoveByPriority(move, board, squareTo, square.CurrentPiece);
-            }
 
-            var iterableMove = move.GetUnitarian();
-            if (board.SquaresRangeEmpty(squareTo.Row, squareTo.Column, iterableMove, square))
-            {
-                if (square.CurrentPiece.Value == PieceValue.King)
-                {
-                    return ((King)(square.CurrentPiece)).GetMoveByPriority(move, board, square, inCheckBeforeMove);
-                }
+            return play.Square.CurrentPiece.GetMoveByPriority(play, squareTo, this.SquaresRangeIsEmpty);
+        }
 
-                return square.CurrentPiece.GetMoveByPriority(squareTo);
-            }
-
-            return Globals.MoveCannotBeDone;
+        private bool SquaresRangeIsEmpty(Play play, Square squareTo)
+        {
+            return play.Board.SquaresRangeEmpty(squareTo.Row, squareTo.Column, play.Move.GetUnitarian(), play.Square);
         }
 
         private bool IsAttacked(Board board, Square square, int turn, bool turnEqualOne)
@@ -613,7 +602,8 @@
 
             foreach (var validOperator in validOperators)
             {
-                validOperator.Type = this.GetMovePriority(validOperator.Move, board, validOperator.Square, inCheckBeforeMove);
+                var play = new Play { Move = validOperator.Move, Board = board, Square = validOperator.Square, IsInCheck = inCheckBeforeMove };
+                validOperator.Type = this.GetMovePriority(play);
             }
 
             return validOperators;
@@ -654,6 +644,16 @@
 
 
 
+        public void MovePiece(Board board, Square square, Move move)
+        {
+            var sourceSquare = board.GetSquare(square.Column, square.Row);
+            Piece pieceToReset;
+            Piece originalPiece;
+            bool queening;
+            GamePhase phase;
+            var candidate = new Operator(move, sourceSquare);
+            this.MakeMove(board, candidate, out sourceSquare, out pieceToReset, out originalPiece, out queening, out phase);
+        }
 
         public Square MakeMove(
             Board board,

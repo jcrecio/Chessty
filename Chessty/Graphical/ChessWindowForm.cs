@@ -997,7 +997,15 @@
 
             var operator1 = new Operator(move, square);
 
-            if (this.Game.AiManager.GetMovePriority(move, this.Game.Board, square, this.Game.AiManager.IsCheck(this.Game.Board, this.Game.Turn, this.Game.Turn == 1)) != 0)
+            var play = new Play
+            {
+                Board = this.Game.Board,
+                IsInCheck = this.Game.AiManager.IsCheck(this.Game.Board, this.Game.Turn, this.Game.Turn == 1),
+                Move = move,
+                Square = square
+            };
+
+            if (this.Game.AiManager.GetMovePriority(play) != 0)
             {
                 var longHash = this.Game.Board.HashBoard;
 

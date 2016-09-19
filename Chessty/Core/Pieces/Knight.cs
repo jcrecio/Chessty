@@ -51,9 +51,11 @@ namespace Chessty.Pieces
             }
         }
 
-        public int GetMoveByPriorityTo(Square square)
+        public override int GetMoveByPriority(Play play, Square squareTo, Func<Play, Square, bool> precondition = null)
         {
-            var valuePieceInSquareTo = square.GetPieceValue();
+            play.Square = squareTo;
+
+            var valuePieceInSquareTo = play.Square.GetPieceValue();
 
             if (valuePieceInSquareTo == 0)
             {

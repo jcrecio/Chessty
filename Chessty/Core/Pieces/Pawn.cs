@@ -8,6 +8,7 @@
     using Movement;
     using White;
     using Black;
+    using System;
 
     public abstract class Pawn : Piece
     {
@@ -38,26 +39,26 @@
             this.AdvanceTwo = previousValues[2];
         }
 
-        public int GetMoveByPriority(Move move, Board board, Square squareTo, Piece pieceFrom)
+        public override int GetMoveByPriority(Play play, Square squareTo, Func<Play, Square, bool> precondition = null)
         {
-            var pawnMove = move as PawnMove;
-            var colorEqualsWhite = pieceFrom.Color == PieceColor.White;
+            var pawnMove = play.Move as PawnMove;
+            var colorEqualsWhite = play.Square.CurrentPiece.Color == PieceColor.White;
 
             Pawn pawnFrom;
             if (colorEqualsWhite)
             {
-                pawnFrom = pieceFrom as WhitePawn;
+                pawnFrom = play.Square.CurrentPiece as WhitePawn;
             }
             else
             {
-                pawnFrom = pieceFrom as BlackPawn;
+                pawnFrom = play.Square.CurrentPiece as BlackPawn;
             }
 
             var pawnType = pawnMove.Type;
             var pieceTo = squareTo.CurrentPiece;
 
             if ((pawnType == PawnMoveType.EatLeft || pawnType == PawnMoveType.EatRight)
-                && (pieceTo != null && pieceTo.Color != pieceFrom.Color))
+                && (pieceTo != null && pieceTo.Color != play.Square.CurrentPiece.Color))
             {
                 return 3;//+ pieceTo.Value - PieceValue.Pawn;
             }
@@ -72,13 +73,13 @@
                 return 0;
             }
 
-            if (pawnType == PawnMoveType.AdvanceOne && pieceTo == null)
-
+            if (pawnType == PawnMoveType.AdvanceOne && pieceTo == null && precondition != null && precondition(play, squareTo))
             {
                 return 1;
             }
 
-            if ((pawnType == PawnMoveType.AdvanceTwo && pawnFrom.AdvanceTwo) && board.GetSquare(squareTo.Column, colorEqualsWhite ? 2 : 5).CurrentPiece == null
+            if ((pawnType == PawnMoveType.AdvanceTwo && pawnFrom.AdvanceTwo) 
+                && play.Board.GetSquare(play.Square.Column, colorEqualsWhite ? 2 : 5).CurrentPiece == null
                     && pieceTo == null)
             {
                 return 2;
