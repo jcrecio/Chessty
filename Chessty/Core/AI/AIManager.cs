@@ -18,6 +18,7 @@
     {
         ChessConfig config;
         private int turn;
+        private readonly IDataService dataService;
 
 
         #region Properties
@@ -179,7 +180,6 @@
             correspondingPieceTable.Add(typeof(BlackPawn), 11);
         }
 
-        private readonly IDataService dataService;
 
         private short[] GetPawnTableWhite()
         {
@@ -191,17 +191,11 @@
             var squareToColumn = play.Square.Column + play.Move.Column;
             var squareToRow = play.Square.Row + play.Move.Row;
 
-            if (!play.Board.IsValidSquare(squareToColumn, squareToRow))
-            {
-                return Globals.MoveCannotBeDone;
-            }
+            if (!play.Board.IsValidSquare(squareToColumn, squareToRow)) return Globals.MoveCannotBeDone;
 
             var squareTo = play.Board.GetSquare(squareToColumn, squareToRow);
 
-            if (!play.Square.PieceCanMoveToSquare(squareTo))
-            {
-                return Globals.MoveCannotBeDone;
-            }
+            if (!play.Square.PieceCanMoveToSquare(squareTo)) return Globals.MoveCannotBeDone;
 
             return play.Square.CurrentPiece.GetMoveByPriority(play, squareTo, this.SquaresRangeIsEmpty);
         }
@@ -219,24 +213,22 @@
 
             foreach (var adjacent in adjacents)
             {
-                var currentPiece = adjacent.CurrentPiece;
+                var columnsDiff = adjacent.Column - square.Column;
+                var rowsDiff = adjacent.Row - square.Row;
 
-                var columnAMinusColumnB = adjacent.Column - square.Column;
-                var rowAMinusRowB = adjacent.Row - square.Row;
-                var difColumn = Math.Abs(columnAMinusColumnB);
-                var difRow = Math.Abs(rowAMinusRowB);
+                var columnsDiffAbsolute = Math.Abs(columnsDiff);
+                var rowsDiffAbsolute = Math.Abs(rowsDiff);
 
-                var diagonal = difColumn == 1 && difRow == 1;
-                var face = difColumn + difRow == 1;
+                var diagonal = columnsDiffAbsolute == 1 && rowsDiffAbsolute == 1;
+                var face = columnsDiffAbsolute + rowsDiffAbsolute == 1;
 
-                if (board.IsValidSquare(adjacent.Row, adjacent.Column) && (currentPiece != null)
-                    && currentPiece.Color == oppositeColor)
+                if (IsConditionForAttack(board, oppositeColor, adjacent, adjacent.CurrentPiece))
                 {
-                    var currentPieceValue = currentPiece.Value;
+                    var currentPieceValue = adjacent.CurrentPiece.Value;
 
                     if (currentPieceValue == PieceValue.Pawn)
                     {
-                        if ((difColumn == 1) && turnEqualOne
+                        if ((columnsDiffAbsolute == 1) && turnEqualOne
                             ? adjacent.Row - 1 == square.Row
                             : adjacent.Row + 1 == square.Row)
                         {
@@ -255,12 +247,12 @@
                     }
                 }
 
-                if (currentPiece != null)
+                if (adjacent.CurrentPiece != null)
                 {
                     continue;
                 }
 
-                Move move = new Move(columnAMinusColumnB, rowAMinusRowB);
+                Move move = new Move(columnsDiff, rowsDiff);
                 Square nearestSquare = board.GetNearestSquare(adjacent, move);
 
                 if (nearestSquare == null || nearestSquare.CurrentPiece == null)
@@ -285,20 +277,18 @@
             }
 
             var adjacentsKnight = board.GetAdjacentSquares(square, typeof(KnightDirection));
-            foreach (var adjacent in adjacentsKnight)
-            {
-                var currentPiece = adjacent.CurrentPiece;
 
-                if (board.IsValidSquare(adjacent.Row, adjacent.Column)
-                    && currentPiece != null
-                    && currentPiece.Color == oppositeColor
-                    && currentPiece.Value == PieceValue.Knight)
-                {
-                    return true;
-                }
-            }
+            return adjacentsKnight.Any(adjacentKnight => board.IsValidSquare(adjacentKnight.Row, adjacentKnight.Column)
+                    && adjacentKnight.CurrentPiece != null
+                    && adjacentKnight.CurrentPiece.Color == oppositeColor
+                    && adjacentKnight.CurrentPiece.Value == PieceValue.Knight);
+        }
 
-            return false;
+        private static bool IsConditionForAttack(Board board, PieceColor oppositeColor, Square adjacent, Piece currentPiece)
+        {
+            return board.IsValidSquare(adjacent.Row, adjacent.Column) 
+                && (currentPiece != null)
+                && currentPiece.Color == oppositeColor;
         }
 
         private int[] GetAttackingAndDefendingValues(Board board, Square square, int turn, bool turnEqualOne, out int[] defendedBy, out int countAttackers, out int countDefenders)
@@ -409,6 +399,7 @@
             }
 
             var adjacentsKnight = board.GetAdjacentSquares(square, typeof(KnightDirection));
+
             foreach (var adjacent in adjacentsKnight)
             {
                 var currentPiece = adjacent.CurrentPiece;
