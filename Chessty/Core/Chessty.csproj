@@ -42,6 +42,9 @@
     <Folder Include="Exception\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChessConfig.cs" />
+    <Compile Include="Data\ChessDataService.cs" />
+    <Compile Include="Data\IDataService.cs" />
     <Compile Include="Contracts\INotPawnOrKingPiece.cs" />
     <Compile Include="AI\AIManager.cs" />
     <Compile Include="Contracts\IVectorize.cs" />

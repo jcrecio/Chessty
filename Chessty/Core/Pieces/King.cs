@@ -62,7 +62,7 @@ namespace Chessty.Pieces
             }
         }
 
-        public override int GetMoveByPriority(Play play, Square squareTo, Func<Play, Square, bool> precondition)
+        public override int GetMoveByPriority(MoveDefinition play, Square squareTo, Func<MoveDefinition, Square, bool> precondition)
         {
             if (!precondition(play, squareTo))
             {

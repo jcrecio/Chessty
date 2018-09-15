@@ -997,7 +997,7 @@
 
             var operator1 = new Operator(move, square);
 
-            var play = new Play
+            var play = new MoveDefinition
             {
                 Board = this.Game.Board,
                 IsInCheck = this.Game.AiManager.IsCheck(this.Game.Board, this.Game.Turn, this.Game.Turn == 1),

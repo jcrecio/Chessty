@@ -39,7 +39,7 @@
             this.AdvanceTwo = previousValues[2];
         }
 
-        public override int GetMoveByPriority(Play play, Square squareTo, Func<Play, Square, bool> precondition = null)
+        public override int GetMoveByPriority(MoveDefinition play, Square squareTo, Func<MoveDefinition, Square, bool> precondition = null)
         {
             var pawnMove = play.Move as PawnMove;
             var colorEqualsWhite = play.Square.CurrentPiece.Color == PieceColor.White;

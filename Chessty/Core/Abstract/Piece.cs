@@ -40,7 +40,7 @@
 
         public abstract int PieceIdentifier { get; }
 
-        public virtual int GetMoveByPriority(Play play, Square squareTo, Func<Play, Square, bool> precondition = null)
+        public virtual int GetMoveByPriority(MoveDefinition play, Square squareTo, Func<MoveDefinition, Square, bool> precondition = null)
         {
             if (precondition != null && !precondition(play, squareTo))
             {

@@ -2,7 +2,7 @@
 
 namespace Chessty.Movement
 {
-    public class Play
+    public class MoveDefinition
     {
         public Board Board { get; set; }
         public Move Move { get; set; }

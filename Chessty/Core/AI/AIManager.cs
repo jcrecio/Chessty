@@ -16,42 +16,9 @@
 
     public class AIManager
     {
-
+        ChessConfig config;
         private int turn;
 
-        #region Const
-        private const int MiddleGameMaterial = 21700;
-        private const float Minimum = -20000;
-        private const float Maximum = 20000;
-        private const float IntValueKing = 20000;
-        private const float ValueForDevelopingKnight = 10;
-        private const float ValueForDevelopingBishop = 10;
-        private const float ValueForDevelopingQueen = 4;
-        private const float ValueForNumAttackersGreaterThanNumDefenders = 0.25f;
-        private const float ReductionFactorForAttackerPiece = 0.25f;
-        private const float ValueForKnightBlockingPawn = 1;
-        private const float ValueForBishopInSameDiagonalThanOppositeKing = 0.25f;
-        private const float ValueForRockInSameColumnThanOppositeKing = 0.25f;
-        private const float ValueForRockInSameRowThanOppositeKing = 0.25f;
-        private const float ValueForRockInPenultimRow = 1;
-        private const float ValueForQueenInSameDiagonalThanOppositeKing = 0.25f;
-        private const float ValueForQueenInSameColumnThanOppositeKing = 0.25f;
-        private const float ValueForQueenInSameRowThanOppositeKing = 0.25f;
-        private const double DiscountValueForBorderPawns = 0.12;
-        private const float ValueWhenOppositeKingCatchYouOverQueening = 0.5f;
-        private const float ValueForPassedPawn = 1;
-        private const int KeepQuiescenceSeach = 3;
-        private const float ValueCastleEvaluation = 50;
-        private const float ValueFactorForAdditionRowToPassedPawn = 1;
-        private const int ValueForSamePieceMoved = 10;
-        private const int ReductionNullMoveDepth = 2;
-
-
-
-        private const bool MaxNode = true;
-        private const bool MinNode = false;
-
-        #endregion
 
         #region Properties
         private Guid PreviousWhitePieceMoved { get; set; }
@@ -168,168 +135,58 @@
 
         public AIManager()
         {
+            SetPiecesPosition();
+            SetStrategyTables();
+            LoadPieceMatrixes();
+            dataService = new ChessDataService();
+        }
+
+        private void LoadPieceMatrixes()
+        {
+            WhitePawnMatrix = new Matrix(dataService.GetPawnTableWhite());
+            BlackPawnMatrix = new Matrix(dataService.GetPawnTableBlack());
+            WhiteBishopMatrix = new Matrix(dataService.GetBishopTableWhite());
+            BlackBishopMatrix = new Matrix(dataService.GetBishopTableBlack());
+            WhiteRockMatrix = new Matrix(dataService.GetRockTableWhite());
+            BlackRockMatrix = new Matrix(dataService.GetRockTableBlack());
+            WhiteKnightMatrix = new Matrix(dataService.GetKnightTableWhite());
+            BlackKnightMatrix = new Matrix(dataService.GetKnightTableBlack());
+            WhiteQueenMatrix = new Matrix(dataService.GetQueenTableWhite());
+            BlackQueenMatrix = new Matrix(dataService.GetQueenTableBlack());
+            WhiteKingMatrix = kingTableWhite;
+            BlackKingMatrix = kingTableBlack;
+        }
+
+        private void SetStrategyTables()
+        {
+            TranspositionTable = new Dictionary<long, HashEntry>();
+            KillerMovesTable = new Dictionary<long, RefutationEntry>();
+        }
+
+        private void SetPiecesPosition()
+        {
             correspondingPieceTable.Add(typeof(WhiteRock), 0);
             correspondingPieceTable.Add(typeof(WhiteKnight), 1);
             correspondingPieceTable.Add(typeof(WhiteBishop), 2);
             correspondingPieceTable.Add(typeof(WhiteQueen), 3);
             correspondingPieceTable.Add(typeof(WhiteKing), 4);
             correspondingPieceTable.Add(typeof(WhitePawn), 5);
-
             correspondingPieceTable.Add(typeof(BlackRock), 6);
             correspondingPieceTable.Add(typeof(BlackKnight), 7);
             correspondingPieceTable.Add(typeof(BlackBishop), 8);
             correspondingPieceTable.Add(typeof(BlackQueen), 9);
             correspondingPieceTable.Add(typeof(BlackKing), 10);
             correspondingPieceTable.Add(typeof(BlackPawn), 11);
-
-            TranspositionTable = new Dictionary<long, HashEntry>();
-            KillerMovesTable = new Dictionary<long, RefutationEntry>();
-
-            #region Matrix initialization
-
-            short[] pawnTableWhite =
-                new short[]
-                    {
-                        0,  0,  0,  0,  0,  0,  0,  0,
-                        50, 50, 50, 50, 50, 50, 50, 50,
-                        10, 10, 20, 30, 30, 20, 10, 10,
-                         5,  5, 10, 25, 25, 10,  5,  5,
-                         0,  0,  0, 20, 20,  0,  0,  0,
-                         5, -5,-10,  0,  0,-10, -5,  5,
-                         5, 10, 10,-20,-20, 10, 10,  5,
-                         0,  0,  0,  0,  0,  0,  0,  0
-                    }.Reverse().ToArray();
-
-            short[] knightTableWhite =
-                new short[]
-                    {
-                        -50,-40,-30,-30,-30,-30,-40,-50,
-                        -40,-20,  0,  0,  0,  0,-20,-40,
-                        -30,  0, 10, 15, 15, 10,  0,-30,
-                        -30,  5, 15, 20, 20, 15,  5,-30,
-                        -30,  0, 15, 20, 20, 15,  0,-30,
-                        -30,  5, 10, 15, 15, 10,  5,-30,
-                        -40,-20,  0,  5,  5,  0,-20,-40,
-                        -50,-40,-30,-30,-30,-30,-40,-50,
-                    }.Reverse().ToArray();
-
-            short[] bishopTableWhite =
-                new short[]
-                    {
-                        -20,-10,-10,-10,-10,-10,-10,-20,
-                        -10,  0,  0,  0,  0,  0,  0,-10,
-                        -10,  0,  5, 10, 10,  5,  0,-10,
-                        -10,  5,  5, 10, 10,  5,  5,-10,
-                        -10,  0, 10, 10, 10, 10,  0,-10,
-                        -10, 10, 10, 10, 10, 10, 10,-10,
-                        -10,  5,  0,  0,  0,  0,  5,-10,
-                        -20,-10,-10,-10,-10,-10,-10,-20,
-                    }.Reverse().ToArray();
-
-            short[] rockTableWhite =
-                new short[]
-                    {
-                          0,  0,  0,  0,  0,  0,  0,  0,
-                          5, 10, 10, 10, 10, 10, 10,  5,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                          0,  0,  0,  5,  5,  0,  0,  0
-                    }.Reverse().ToArray();
-
-            short[] queenTableWhite =
-                new short[]
-                    {
-                        -20,-10,-10, -5, -5,-10,-10,-20,
-                        -10,  0,  0,  0,  0,  0,  0,-10,
-                        -10,  0,  5,  5,  5,  5,  0,-10,
-                         -5,  0,  5,  5,  5,  5,  0, -5,
-                          0,  0,  5,  5,  5,  5,  0, -5,
-                        -10,  5,  5,  5,  5,  5,  0,-10,
-                        -10,  0,  0,  0,  0,  5,  0,-10,
-                        -20,-10,-10, -5, -5,-10,-10,-20
-                    }.Reverse().ToArray();
-
-            short[] pawnTableBlack = new short[]
-                    {
-                        0,  0,  0,  0,  0,  0,  0,  0,
-                        5, 10, 10,-20,-20, 10, 10,  5,
-                        5, -5,-10,  0,  0,-10, -5,  5,
-                        0,  0,  0, 20, 20,  0,  0,  0,
-                        5,  5, 10, 25, 25, 10,  5,  5,
-                        10, 10, 20, 30, 30, 20, 10, 10,
-                        50, 50, 50, 50, 50, 50, 50, 50,
-                        0,  0,  0,  0,  0,  0,  0,  0,
-                    }.Reverse().ToArray();
-
-            short[] knightTableBlack = new short[]
-                    {
-                        -50,-40,-30,-30,-30,-30,-40,-50,
-                        -40,-20,  0,  5,  5,  0,-20,-40,
-                        -30,  5, 10, 15, 15, 10,  5,-30,
-                        -30,  0, 15, 20, 20, 15,  0,-30,
-                        -30,  5, 15, 20, 20, 15,  5,-30,
-                        -30,  0, 10, 15, 15, 10,  0,-30,
-                        -40,-20,  0,  0,  0,  0,-20,-40,
-                        -50,-40,-30,-30,-30,-30,-40,-50,
-                    }.Reverse().ToArray();
-
-            var bishopTableBlack = new short[]
-                    {
-                        -20,-10,-10,-10,-10,-10,-10,-20,
-                        -10,  5,  0,  0,  0,  0,  5,-10,
-                        -10, 10, 10, 10, 10, 10, 10,-10,
-                        -10,  0, 10, 10, 10, 10,  0,-10,
-                        -10,  5,  5, 10, 10,  5,  5,-10,
-                        -10,  0,  5, 10, 10,  5,  0,-10,
-                        -10,  0,  0,  0,  0,  0,  0,-10,
-                        -20,-10,-10,-10,-10,-10,-10,-20,
-                    }.Reverse().ToArray();
-
-            var rockTableBlack = new short[]
-                    {
-                          0,  0,  0,  5,  5,  0,  0,  0,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                         -5,  0,  0,  0,  0,  0,  0, -5,
-                          5, 10, 10, 10, 10, 10, 10,  5,
-                          0,  0,  0,  0,  0,  0,  0,  0,
-                    }.Reverse().ToArray();
-
-
-            short[] queenTableBlack = new short[]
-                    {
-                        -20,-10,-10, -5, -5,-10,-10,-20,
-                        -10,  0,  0,  0,  0,  5,  0,-10,
-                        -10,  0,  5,  5,  5,  5,  5,-10,
-                        -10,  0,  5,  5,  5,  5,  5,-10,
-                         -5,  0,  5,  5,  5,  5,  0,  0,
-                        -10,  0,  5,  5,  5,  5,  0,-10,
-                        -10,  0,  0,  0,  0,  0,  0,-10,
-                        -20,-10,-10, -5, -5,-10,-10,-20,
-                    }.Reverse().ToArray();
-
-            WhitePawnMatrix = new Matrix(pawnTableWhite);
-            BlackPawnMatrix = new Matrix(pawnTableBlack);
-            WhiteBishopMatrix = new Matrix(bishopTableWhite);
-            BlackBishopMatrix = new Matrix(bishopTableBlack);
-            WhiteRockMatrix = new Matrix(rockTableWhite);
-            BlackRockMatrix = new Matrix(rockTableBlack);
-            WhiteKnightMatrix = new Matrix(knightTableWhite);
-            BlackKnightMatrix = new Matrix(knightTableBlack);
-            WhiteQueenMatrix = new Matrix(queenTableWhite);
-            BlackQueenMatrix = new Matrix(queenTableBlack);
-            WhiteKingMatrix = kingTableWhite;
-            BlackKingMatrix = kingTableBlack;
-
-            #endregion
         }
 
-        public int GetMovePriority(Play play)
+        private readonly IDataService dataService;
+
+        private short[] GetPawnTableWhite()
+        {
+            return dataService.GetPawnTableWhite();
+        }
+
+        public int GetMovePriority(MoveDefinition play)
         {
             var squareToColumn = play.Square.Column + play.Move.Column;
             var squareToRow = play.Square.Row + play.Move.Row;
@@ -349,7 +206,7 @@
             return play.Square.CurrentPiece.GetMoveByPriority(play, squareTo, this.SquaresRangeIsEmpty);
         }
 
-        private bool SquaresRangeIsEmpty(Play play, Square squareTo)
+        private bool SquaresRangeIsEmpty(MoveDefinition play, Square squareTo)
         {
             return play.Board.SquaresRangeEmpty(squareTo.Row, squareTo.Column, play.Move.GetUnitarian(), play.Square);
         }
@@ -602,7 +459,7 @@
 
             foreach (var validOperator in validOperators)
             {
-                var play = new Play { Move = validOperator.Move, Board = board, Square = validOperator.Square, IsInCheck = inCheckBeforeMove };
+                var play = new MoveDefinition { Move = validOperator.Move, Board = board, Square = validOperator.Square, IsInCheck = inCheckBeforeMove };
                 validOperator.Type = this.GetMovePriority(play);
             }
 
@@ -750,7 +607,7 @@
                 board.BlackSquaresWithPieces.Add(nextSquare.Identifier, nextSquare);
                 board.WhiteSquaresWithPieces.Remove(nextSquare.Identifier);
 
-                if (board.MaterialWhite <= MiddleGameMaterial && board.MaterialBlack <= MiddleGameMaterial)
+                if (board.MaterialWhite <= config.MiddleGameMaterial && board.MaterialBlack <= config.MiddleGameMaterial)
                 {
                     GamePhase = GamePhase.EndGame;
 
@@ -940,7 +797,7 @@
 
         public Operator Search(Board board, int turn, int depth)
         {
-            Operator value = this.Search(board, depth, Minimum, Maximum, turn); ;
+            Operator value = this.Search(board, depth, config.Minimum, config.Maximum, turn); ;
             //if (!previousresult.Equals(Minimum))
             //{
             //    value = this.Search(board, depth, previousresult - (float)PieceValue.Rock, previousresult + (float)PieceValue.Rock, turn);
@@ -962,7 +819,7 @@
             Operator result = null;
             var turnEqualOne = turn == 1;
 
-            float best = Minimum;
+            float best = config.Minimum;
 
             var inCheckBeforeMove = this.IsCheck(board, turn, turnEqualOne);
             var candidates = this.GetOrderedLegalCandidates(board, turnEqualOne, inCheckBeforeMove, depth);
@@ -1000,7 +857,7 @@
                             result = candidate;
                         }
 
-                        var value = -this.NegaMax(board, depth - 1, -beta, -alpha, turn, MinNode, idPieceToCompare, KeepQuiescenceSeach);
+                        var value = -this.NegaMax(board, depth - 1, -beta, -alpha, turn, config.MinNode, idPieceToCompare, config.KeepQuiescenceSeach);
 
                         if (best < value)
                         {
@@ -1133,7 +990,7 @@
 
             var inCheckBeforeMove = this.IsCheck(board, turn, turnEqualOne);
             var candidates = this.GetOrderedLegalCandidates(board, turnEqualOne, inCheckBeforeMove, depth);
-            var isTerminal = this.MaterialDifference(board) >= IntValueKing;
+            var isTerminal = this.MaterialDifference(board) >= config.IntValueKing;
 
             if (depth <= 0 || isTerminal)
             {
@@ -1144,7 +1001,7 @@
 
             if (!inCheckBeforeMove && nullMoveAllow)
             {
-                float value = -this.NegaMax(board, depth - ReductionNullMoveDepth - 1, -beta, -beta + 1, turn, !maxOrMin, idPieceToCompare, keepQuiescenceSearch);
+                float value = -this.NegaMax(board, depth - config.ReductionNullMoveDepth - 1, -beta, -beta + 1, turn, !maxOrMin, idPieceToCompare, keepQuiescenceSearch);
 
                 if (value > beta)
                 {
@@ -1152,7 +1009,7 @@
                 }
             }
 
-            float bestValue = Minimum;
+            float bestValue = config.Minimum;
 
             foreach (var candidate in candidates)
             {
@@ -1171,7 +1028,7 @@
 
                 if (!this.IsCheck(board, currentTurn, turnEqualOne))
                 {
-                    float valueBranch = -this.NegaMax(board, queening ? depth : depth - 1, -beta, -alpha, turn, !maxOrMin, idPieceToCompare, KeepQuiescenceSeach, queen, candidate.Type > 1);
+                    float valueBranch = -this.NegaMax(board, queening ? depth : depth - 1, -beta, -alpha, turn, !maxOrMin, idPieceToCompare, config.KeepQuiescenceSeach, queen, candidate.Type > 1);
                     this.UndoMove(board, candidate, nextSquare, sourceSquare, pieceToReset, previousValues, originalPiece, queening, previousPhase, hashBoard);
 
                     if (valueBranch > bestValue)
@@ -1293,11 +1150,11 @@
                 var valueOfPieceToCompare = 0;
                 if (thisBandEqualOne && idPieceToCompare.Equals(this.PreviousWhitePieceMoved))
                 {
-                    valueOfPieceToCompare -= ValueForSamePieceMoved;
+                    valueOfPieceToCompare -= config.ValueForSamePieceMoved;
                 }
                 else if (idPieceToCompare.Equals(this.PreviousBlackPieceMoved))
                 {
-                    valueOfPieceToCompare -= ValueForSamePieceMoved;
+                    valueOfPieceToCompare -= config.ValueForSamePieceMoved;
                 }
 
                 return valueOfPieceToCompare;
@@ -1387,13 +1244,13 @@
                     {
                         if (this.FullfillsSquareRule(board, square.Column, square.Row, turnEqualsOne))
                         {
-                            value -= ValueWhenOppositeKingCatchYouOverQueening;
+                            value -= config.ValueWhenOppositeKingCatchYouOverQueening;
                         }
                     }
 
                     if (this.IsPassedPawn(board, square))
                     {
-                        value += ((turnEqualsOne ? square.Row : 7 - square.Row) * ValueFactorForAdditionRowToPassedPawn * 2);
+                        value += ((turnEqualsOne ? square.Row : 7 - square.Row) * config.ValueFactorForAdditionRowToPassedPawn * 2);
                     }
 
                     doubledPawns[square.Column]++;
@@ -1404,7 +1261,7 @@
 
                     if (square.Column == 0 || square.Column == 7)
                     {
-                        value -= (float)(value * DiscountValueForBorderPawns);
+                        value -= (float)(value * config.DiscountValueForBorderPawns);
                     }
 
                     var row = turnEqualsOne ? square.Row + 1 : square.Row - 1;
@@ -1448,22 +1305,22 @@
 
                     if (square.Row == kingSquareOpposite.Row)
                     {
-                        value += ValueForQueenInSameRowThanOppositeKing;
+                        value += config.ValueForQueenInSameRowThanOppositeKing;
                     }
 
                     if (square.Column == kingSquareOpposite.Column)
                     {
-                        value += ValueForQueenInSameColumnThanOppositeKing;
+                        value += config.ValueForQueenInSameColumnThanOppositeKing;
                     }
 
                     if (square.GetUnitarian().Equals(kingSquareOpposite.GetUnitarian()))
                     {
-                        value += ValueForQueenInSameDiagonalThanOppositeKing;
+                        value += config.ValueForQueenInSameDiagonalThanOppositeKing;
                     }
 
                     if (square.CurrentPiece.Developed)
                     {
-                        value += ValueForDevelopingQueen;
+                        value += config.ValueForDevelopingQueen;
                     }
                 }
 
@@ -1472,7 +1329,7 @@
                     if ((piece.Color == PieceColor.White && square.Row == 6)
                         || (piece.Color == PieceColor.Black && square.Row == 1))
                     {
-                        value += ValueForRockInPenultimRow;
+                        value += config.ValueForRockInPenultimRow;
                     }
 
                     value += turnEqualsOne
@@ -1481,12 +1338,12 @@
 
                     if (square.Row == kingSquareOpposite.Row)
                     {
-                        value += ValueForRockInSameRowThanOppositeKing;
+                        value += config.ValueForRockInSameRowThanOppositeKing;
                     }
 
                     if (square.Column == kingSquareOpposite.Column)
                     {
-                        value += ValueForRockInSameColumnThanOppositeKing;
+                        value += config.ValueForRockInSameColumnThanOppositeKing;
                     }
                 }
 
@@ -1498,12 +1355,12 @@
 
                     if (square.GetUnitarian().Equals(kingSquareOpposite.GetUnitarian()))
                     {
-                        value += ValueForBishopInSameDiagonalThanOppositeKing;
+                        value += config.ValueForBishopInSameDiagonalThanOppositeKing;
                     }
 
                     if (square.CurrentPiece.Developed)
                     {
-                        value += ValueForDevelopingBishop;
+                        value += config.ValueForDevelopingBishop;
                     }
                 }
 
@@ -1515,7 +1372,7 @@
 
                     if (square.CurrentPiece.Developed)
                     {
-                        value += ValueForDevelopingKnight;
+                        value += config.ValueForDevelopingKnight;
                     }
 
                     if (turnEqualsOne)
@@ -1527,7 +1384,7 @@
                                 && nextRowPieceValue.CurrentPiece.Value == PieceValue.Pawn
                                 && nextRowPieceValue.CurrentPiece.Color.Equals(PieceColor.Black))
                             {
-                                value += ValueForKnightBlockingPawn;
+                                value += config.ValueForKnightBlockingPawn;
                             }
                         }
                     }
@@ -1540,7 +1397,7 @@
                                 && nextRowPieceValue.CurrentPiece.Value == PieceValue.Pawn
                                 && nextRowPieceValue.CurrentPiece.Color.Equals(PieceColor.White))
                             {
-                                value += ValueForKnightBlockingPawn;
+                                value += config.ValueForKnightBlockingPawn;
                             }
                         }
                     }
@@ -1571,12 +1428,12 @@
         {
             if (turnEqualsOne)
             {
-                return (board.WhiteHasCastled ? ValueCastleEvaluation : 0)
-                       - (board.BlackHasCastled ? ValueCastleEvaluation : 0);
+                return (board.WhiteHasCastled ? config.ValueCastleEvaluation : 0)
+                       - (board.BlackHasCastled ? config.ValueCastleEvaluation : 0);
             }
 
-            return (board.BlackHasCastled ? ValueCastleEvaluation : 0)
-                       - (board.WhiteHasCastled ? ValueCastleEvaluation : 0);
+            return (board.BlackHasCastled ? config.ValueCastleEvaluation : 0)
+                       - (board.WhiteHasCastled ? config.ValueCastleEvaluation : 0);
         }
 
         private float VariationMaterialEvaluation(Board board, bool turnEqualsOne, int materialDifference)
