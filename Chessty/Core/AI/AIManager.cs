@@ -16,68 +16,11 @@
 
     public class AIManager
     {
-        ChessConfig config;
-        private int turn;
+        private readonly ChessConfig config;
         private readonly IDataService dataService;
 
-
-        #region Properties
         private Guid PreviousWhitePieceMoved { get; set; }
         private Guid PreviousBlackPieceMoved { get; set; }
-
-        public readonly Matrix kingTableWhite = new Matrix(
-                new short[]
-                    {
-                        -30,-40,-40,-50,-50,-40,-40,-30,
-                        -30,-40,-40,-50,-50,-40,-40,-30,
-                        -30,-40,-40,-50,-50,-40,-40,-30,
-                        -30,-40,-40,-50,-50,-40,-40,-30,
-                        -20,-30,-30,-40,-40,-30,-30,-20,
-                        -10,-20,-20,-20,-20,-20,-20,-10,
-                         20, 20,  0,  0,  0,  0, 20, 20,
-                         20, 30, 10,  0,  0, 10, 30, 20
-                    }
-                    .Reverse().ToArray());
-
-        public readonly Matrix kingTableEndGameWhite = new Matrix(
-            new short[]
-                    {
-                        -50,-40,-30,-20,-20,-30,-40,-50,
-                        -30,-20,-10,  0,  0,-10,-20,-30,
-                        -30,-10, 20, 30, 30, 20,-10,-30,
-                        -30,-10, 30, 40, 40, 30,-10,-30,
-                        -30,-10, 30, 40, 40, 30,-10,-30,
-                        -30,-10, 20, 30, 30, 20,-10,-30,
-                        -30,-30,  0,  0,  0,  0,-30,-30,
-                        -50,-30,-30,-30,-30,-30,-30,-50
-                    });
-
-        public readonly Matrix kingTableBlack = new Matrix(
-            new short[]
-                    {
-                         20, 30, 10,  0,  0, 10, 30, 20,
-                         20, 20,  0,  0,  0,  0, 20, 20,
-                        -10,-20,-20,-20,-20,-20,-20,-10,
-                        -20,-30,-30,-40,-40,-30,-30,-20,
-                        -30,-40,-40,-50,-50,-40,-40,-30,
-                        -30,-40,-40,-50,-50,-40,-40,-30,
-                        -30,-40,-40,-50,-50,-40,-40,-30,
-                        -30,-40,-40,-50,-50,-40,-40,-30,
-                    }.Reverse().ToArray());
-
-        public readonly Matrix kingTableEndGameBlack = new Matrix(
-            new short[]
-                    {
-                        -50,-30,-30,-30,-30,-30,-30,-50,
-                         30,-30,  0,  0,  0,  0,-30,-30,
-                        -30,-10, 20, 30, 30, 20,-10,-30,
-                        -30,-10, 30, 40, 40, 30,-10,-30,
-                        -30,-10, 30, 40, 40, 30,-10,-30,
-                        -30,-10, 20, 30, 30, 20,-10,-30,
-                        -30,-20,-10,  0,  0,-10,-20,-30,
-                        -50,-40,-30,-20,-20,-30,-40,-50,
-                    }
-                .Reverse().ToArray());
 
         [DataMember]
         public GamePhase GamePhase { get; set; }
@@ -119,11 +62,10 @@
         public Matrix BlackKingMatrix { get; set; }
 
         [DataMember]
-        private Dictionary<Type, short> correspondingPieceTable = new Dictionary<Type, short>();
-        #endregion
+        public Dictionary<long, HashEntry> TranspositionTable { get; set; }
 
         [DataMember]
-        public Dictionary<long, HashEntry> TranspositionTable { get; set; }
+        private Dictionary<Type, short> correspondingPieceTable = new Dictionary<Type, short>();
 
         [DataMember]
         public Dictionary<long, RefutationEntry> KillerMovesTable { get; set; }
@@ -137,6 +79,7 @@
         public AIManager()
         {
             dataService = new ChessDataService();
+            config = new ChessConfig();
 
             SetPiecesPosition();
             SetStrategyTables();
@@ -155,8 +98,8 @@
             BlackKnightMatrix = new Matrix(dataService.GetKnightTableBlack());
             WhiteQueenMatrix = new Matrix(dataService.GetQueenTableWhite());
             BlackQueenMatrix = new Matrix(dataService.GetQueenTableBlack());
-            WhiteKingMatrix = kingTableWhite;
-            BlackKingMatrix = kingTableBlack;
+            WhiteKingMatrix = new Matrix(dataService.GetKingTableWhite());
+            BlackKingMatrix = new Matrix(dataService.GetKingTableBlack());
         }
 
         private void SetStrategyTables()
@@ -181,32 +124,19 @@
             correspondingPieceTable.Add(typeof(BlackPawn), 11);
         }
 
-
         private short[] GetPawnTableWhite()
         {
             return dataService.GetPawnTableWhite();
         }
 
-        public int GetMovePriority(MoveDefinition play)
+        public int GetMovePriority(MoveDefinition moveDefinition)
         {
-            var squareToColumn = play.Square.Column + play.Move.Column;
-            var squareToRow = play.Square.Row + play.Move.Row;
+            if(!moveDefinition.CanBeDone()) return Globals.MoveCannotBeDone;
 
-            if (!play.Board.IsValidSquare(squareToColumn, squareToRow)) return Globals.MoveCannotBeDone;
-
-            var squareTo = play.Board.GetSquare(squareToColumn, squareToRow);
-
-            if (!play.Square.PieceCanMoveToSquare(squareTo)) return Globals.MoveCannotBeDone;
-
-            return play.Square.CurrentPiece.GetMoveByPriority(play, squareTo, this.SquaresRangeIsEmpty);
+            return moveDefinition.GetMoveByPriority();
         }
 
-        private bool SquaresRangeIsEmpty(MoveDefinition play, Square squareTo)
-        {
-            return play.Board.SquaresRangeEmpty(squareTo.Row, squareTo.Column, play.Move.GetUnitarian(), play.Square);
-        }
-
-        private bool IsAttacked(Board board, Square square, int turn, bool turnEqualOne)
+        private bool IsAttacked(Board board, Square square, bool turnEqualOne)
         {
             var oppositeColor = turnEqualOne ? PieceColor.Black : PieceColor.White;
 
@@ -437,11 +367,9 @@
         public bool IsCheck(Board board, int turn, bool turnEqualOne)
         {
             Square kingSquare = turnEqualOne ? board.WhiteKingPosition : board.BlackKingPosition;
-            return this.IsAttacked(board, kingSquare, turn, turnEqualOne);
+            return this.IsAttacked(board, kingSquare, turnEqualOne);
         }
-
-
-
+        
         private List<Operator> GetOrderedLegalCandidates(Board board, bool turnEqualOne, bool inCheckBeforeMove, int depth)
         {
             var nonZeroOperators = this.GetLegalCandidates(board, turnEqualOne, inCheckBeforeMove, depth);
@@ -462,8 +390,8 @@
 
             foreach (var validOperator in validOperators)
             {
-                var play = new MoveDefinition { Move = validOperator.Move, Board = board, Square = validOperator.Square, IsInCheck = inCheckBeforeMove };
-                validOperator.Type = this.GetMovePriority(play);
+                var moveDefinition = new MoveDefinition { Move = validOperator.Move, Board = board, Square = validOperator.Square, IsInCheck = inCheckBeforeMove };
+                validOperator.Type = this.GetMovePriority(moveDefinition);
             }
 
             return validOperators;
@@ -561,18 +489,18 @@
                 var nextValue = nextSquare.CurrentPiece.Value;
                 if (nextValue == PieceValue.Rock || nextValue == PieceValue.King)
                 {
-                    (board.WhiteKingPosition.CurrentPiece as King).Castle = false;
+                    ForbiddenCastling(board);
                 }
 
                 board.WhiteSquaresWithPieces.Remove(sourceSquare.Identifier);
                 board.WhiteSquaresWithPieces.Add(nextSquare.Identifier, nextSquare);
                 board.BlackSquaresWithPieces.Remove(nextSquare.Identifier);
 
-                if (board.MaterialWhite <= 21700 && board.MaterialBlack <= 21700)
+                if (!PhaseIsMiddleGame(board))
                 {
                     GamePhase = GamePhase.EndGame;
 
-                    this.WhiteKingMatrix = kingTableEndGameWhite;
+                    this.WhiteKingMatrix = new Matrix(this.dataService.GetKingTableEndGameWhite());
                 }
             }
             else
@@ -614,13 +542,23 @@
                 {
                     GamePhase = GamePhase.EndGame;
 
-                    this.BlackKingMatrix = kingTableEndGameBlack;
+                    this.BlackKingMatrix = new Matrix(this.dataService.GetKingTableEndGameBlack());
                 }
             }
 
             XorSquare(board, nextSquare.Column, nextSquare.Row, nextSquare.CurrentPiece);
 
             return nextSquare;
+        }
+
+        private static void ForbiddenCastling(Board board)
+        {
+            (board.WhiteKingPosition.CurrentPiece as King).Castle = false;
+        }
+
+        private bool PhaseIsMiddleGame(Board board)
+        {
+            return board.MaterialWhite > config.MiddleGameMaterial || board.MaterialBlack > config.MiddleGameMaterial;
         }
 
         public void XorSquare(Board board, int column, int row, Piece piece)
@@ -747,7 +685,7 @@
                 GamePhase = previousPhase;
                 if (previousPhase != GamePhase.EndGame)
                 {
-                    this.WhiteKingMatrix = kingTableWhite;
+                    this.WhiteKingMatrix = new Matrix(this.dataService.GetKingTableWhite());
                 }
             }
             else
@@ -756,7 +694,7 @@
                 GamePhase = previousPhase;
                 if (previousPhase != GamePhase.EndGame)
                 {
-                    this.BlackKingMatrix = kingTableBlack;
+                    this.BlackKingMatrix = new Matrix(this.dataService.GetKingTableBlack());
                 }
             }
 

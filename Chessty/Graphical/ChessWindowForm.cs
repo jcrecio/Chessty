@@ -18,8 +18,13 @@
     using Chessty.Structure;
     using Graphical.Properties;
     using Board;
+    using Chessty.AI;
+    using Chessty.Matrix;
+
     public partial class ChessWindowForm : Form
     {
+        private IDataService dataService;
+
         private Dictionary<Tuple<int, int, Color>, PictureBox> relations = new Dictionary<Tuple<int, int, Color>, PictureBox>();
 
         private readonly Dictionary<Tuple<int, int, Color>, PictureBox> relationsWhite = new Dictionary<Tuple<int, int, Color>, PictureBox>();
@@ -305,6 +310,8 @@
             this.LoadOpeningsIntoGame();
             this.LoadInitialSettings();
             this.LoadMovesTable();
+
+            this.dataService = new ChessDataService();
 
             this.Draw();
         }
@@ -1211,8 +1218,8 @@
             if (this.Game.Board.MaterialWhite < 21700 && this.Game.Board.MaterialWhite < 21700)
             {
                 this.Game.AiManager.GamePhase = GamePhase.EndGame;
-                this.Game.AiManager.WhiteKingMatrix = this.Game.AiManager.kingTableEndGameWhite;
-                this.Game.AiManager.BlackKingMatrix = this.Game.AiManager.kingTableEndGameBlack;
+                this.Game.AiManager.WhiteKingMatrix = new Matrix(this.dataService.GetKingTableEndGameWhite());
+                this.Game.AiManager.BlackKingMatrix = new Matrix(this.dataService.GetKingTableEndGameBlack());
             }
         }
 

@@ -4,6 +4,7 @@
     {
         short[] GetPawnTableWhite();
         short[] GetKnightTableWhite();
+        short[] GetKingTableWhite();
         short[] GetBishopTableWhite();
         short[] GetRockTableWhite();
         short[] GetQueenTableWhite();
@@ -12,5 +13,8 @@
         short[] GetBishopTableBlack();
         short[] GetRockTableBlack();
         short[] GetQueenTableBlack();
+        short[] GetKingTableBlack();
+        short[] GetKingTableEndGameWhite();
+        short[] GetKingTableEndGameBlack();
     }
 }
