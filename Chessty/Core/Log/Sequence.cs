@@ -1,14 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace Chessty
+﻿namespace Chessty
 {
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+
     public class Sequence
     {
         private string sequenceString;
         private List<Ply> stack;
+
         public Sequence()
         {
             this.stack = new List<Ply>();
@@ -29,8 +29,10 @@ namespace Chessty
         public Ply Pop()
         {
             var item = this.stack.LastOrDefault();
+
             this.stack.RemoveAt(this.stack.Count - 1);
             this.sequenceString = this.GetSequenceString();
+
             return item;
         }
 
@@ -41,13 +43,13 @@ namespace Chessty
 
         public Ply GetFittingPly(Sequence sequence)
         {
-            var plies = sequence.GetPlies().Count;
-            if (plies >= this.stack.Count)
+            var pliesCount = sequence.GetPlies().Count;
+            if (pliesCount >= this.stack.Count)
             {
                 return null;
             }
 
-            for (int i = 0; i < plies; i++)
+            for (int i = 0; i < pliesCount; i++)
             {
                 if (!sequence[i].Equals(this.stack[i]))
                 {
@@ -55,15 +57,12 @@ namespace Chessty
                 }
             }
 
-            return this.stack[plies];
+            return this.stack[pliesCount];
         }
 
         public Ply this[int key]
         {
-            get
-            {
-                return this.stack[key];
-            }
+            get => this.stack[key];
         }
 
         public void CutTo(int count)

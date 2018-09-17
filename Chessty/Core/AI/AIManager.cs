@@ -136,10 +136,11 @@
 
         public AIManager()
         {
+            dataService = new ChessDataService();
+
             SetPiecesPosition();
             SetStrategyTables();
             LoadPieceMatrixes();
-            dataService = new ChessDataService();
         }
 
         private void LoadPieceMatrixes()
@@ -262,26 +263,37 @@
 
                 var nearestSquarePiece = nearestSquare.CurrentPiece;
                 var nearestSquarePieceValue = nearestSquare.CurrentPiece.Value;
+
                 var isOpposite = nearestSquarePiece.Color == oppositeColor;
-
                 var isQueen = nearestSquarePieceValue == PieceValue.Queen;
-                if (diagonal && isOpposite && (isQueen || nearestSquarePieceValue == PieceValue.Bishop))
-                {
-                    return true;
-                }
 
-                if (face && isOpposite && (isQueen || nearestSquarePieceValue == PieceValue.Rock))
+                if (CanAttackInDiagonal(diagonal, nearestSquarePieceValue, isOpposite, isQueen)
+                    || CanAttackInLine(face, nearestSquarePieceValue, isOpposite, isQueen))
                 {
                     return true;
                 }
             }
 
-            var adjacentsKnight = board.GetAdjacentSquares(square, typeof(KnightDirection));
+            return CanAttackInL(board, square, oppositeColor);
+        }
 
-            return adjacentsKnight.Any(adjacentKnight => board.IsValidSquare(adjacentKnight.Row, adjacentKnight.Column)
-                    && adjacentKnight.CurrentPiece != null
-                    && adjacentKnight.CurrentPiece.Color == oppositeColor
-                    && adjacentKnight.CurrentPiece.Value == PieceValue.Knight);
+        private static bool CanAttackInL(Board board, Square square, PieceColor oppositeColor)
+        {
+            return board.GetAdjacentSquares(square, typeof(KnightDirection))
+                                    .Any(adjacentKnight => board.IsValidSquare(adjacentKnight.Row, adjacentKnight.Column)
+                                && adjacentKnight.CurrentPiece != null
+                                && adjacentKnight.CurrentPiece.Color == oppositeColor
+                                && adjacentKnight.CurrentPiece.Value == PieceValue.Knight);
+        }
+
+        private static bool CanAttackInLine(bool face, PieceValue nearestSquarePieceValue, bool isOpposite, bool isQueen)
+        {
+            return face && isOpposite && (isQueen || nearestSquarePieceValue == PieceValue.Rock);
+        }
+
+        private static bool CanAttackInDiagonal(bool diagonal, PieceValue nearestSquarePieceValue, bool isOpposite, bool isQueen)
+        {
+            return diagonal && isOpposite && (isQueen || nearestSquarePieceValue == PieceValue.Bishop);
         }
 
         private static bool IsConditionForAttack(Board board, PieceColor oppositeColor, Square adjacent, Piece currentPiece)
