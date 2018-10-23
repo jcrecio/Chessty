@@ -1,7 +1,7 @@
 # Chessty
 Chessty is a simple C# engine that was originally thought to perform a little AI functionality test. After that it grew up quite a bit more than expected and the outcome is such an engine. 
 
-![alt text](https://raw.githubusercontent.com/jcrecio/Chessty/master/board.png)
+![alt text](https://raw.githubusercontent.com/jcrecio/Chessty/master/chess.png)
 
 ## Features
 ### Negamax
