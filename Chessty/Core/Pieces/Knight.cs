@@ -69,5 +69,10 @@ namespace Chessty.Pieces
 
             return Globals.MoveIsCapture;
         }
+
+        public override Guid GetTypeId()
+        {
+            return Guid.Empty;
+        }
     }
 }

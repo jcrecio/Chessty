@@ -79,5 +79,10 @@ namespace Chessty.Pieces
                 return (int)PieceIdentifiers.Rock;
             }
         }
+
+        public override Guid GetTypeId()
+        {
+            return Guid.Empty;
+        }
     }
 }

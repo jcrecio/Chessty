@@ -639,6 +639,7 @@
                             squareTo.Row - this.SquareSelected.Row);
 
                         this.SquareSelected.HasPiece = false;
+
                     }
                     else
                     {

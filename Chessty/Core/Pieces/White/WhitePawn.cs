@@ -1,5 +1,6 @@
 ﻿namespace Chessty.Pieces.White
 {
+    using System;
     using System.Collections.Generic;
     using Chessty.Enumeration;
     using Chessty.Movement;
@@ -7,6 +8,8 @@
 
     public class WhitePawn : Pawn
     {
+        public static Guid TypeId { get; } = Guid.NewGuid();
+
         private static readonly List<Move> Moves = new List<Move> {
                 new PawnMove(PawnMoveType.EatLeft, -1, 1),
                 new PawnMove(PawnMoveType.AdvanceOne, 0, 1),
@@ -16,7 +19,7 @@
                 new PawnMove(PawnMoveType.InPassantRight, 1, 1)
             };
 
-    public WhitePawn(Square square) : base(Enumeration.PieceColor.White, square) { }
+        public WhitePawn(Square square) : base(Enumeration.PieceColor.White, square) { }
 
         public override List<Move> GetMoves()
         {
@@ -26,6 +29,11 @@
         public static WhitePawn Create(Square initialSquare)
         {
             return new WhitePawn(initialSquare);
+        }
+
+        public override Guid GetTypeId()
+        {
+            return TypeId;
         }
 
         public override string ToString()

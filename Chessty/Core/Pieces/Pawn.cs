@@ -73,7 +73,7 @@
                 return 0;
             }
 
-            if (pawnType == PawnMoveType.AdvanceOne && pieceTo == null && precondition != null && precondition(play, squareTo))
+            if (pawnType == PawnMoveType.AdvanceOne && pieceTo == null /*&& precondition != null && precondition(play, squareTo)*/)
             {
                 return 1;
             }
@@ -95,6 +95,11 @@
             {
                 return (int)PieceIdentifiers.Pawn;
             }
+        }
+
+        public override Guid GetTypeId()
+        {
+            return Guid.Empty;
         }
     }
 }

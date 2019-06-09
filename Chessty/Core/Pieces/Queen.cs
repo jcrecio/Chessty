@@ -108,5 +108,10 @@ namespace Chessty.Pieces
                 return (int)PieceIdentifiers.Queen;
             }
         }
+
+        public override Guid GetTypeId()
+        {
+            return Guid.Empty;
+        }
     }
 }

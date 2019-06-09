@@ -15,6 +15,9 @@
             get; 
             private set;
         }
+
+        public abstract Guid GetTypeId();
+        
         public bool Developed { get; set; }
 
         public Guid Id { get; set; }

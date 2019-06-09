@@ -100,6 +100,12 @@ namespace Chessty.Pieces
                         && board.GetSquare(2, row).CurrentPiece == null
                         && board.GetSquare(3, row).CurrentPiece == null);
         }
+
+        public override Guid GetTypeId()
+        {
+            return Guid.Empty;
+        }
+
         public override int PieceIdentifier
         {
             get

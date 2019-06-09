@@ -16,9 +16,6 @@
 
     public class AIManager
     {
-
-        private int turn;
-
         #region Const
         private const int MiddleGameMaterial = 21700;
         private const float Minimum = -20000;
@@ -151,7 +148,7 @@
         public Matrix BlackKingMatrix { get; set; }
 
         [DataMember]
-        private Dictionary<Type, short> correspondingPieceTable = new Dictionary<Type, short>();
+        private Dictionary<Guid, short> correspondingPieceTable = new Dictionary<Guid, short>();
         #endregion
 
         [DataMember]
@@ -168,19 +165,19 @@
 
         public AIManager()
         {
-            correspondingPieceTable.Add(typeof(WhiteRock), 0);
-            correspondingPieceTable.Add(typeof(WhiteKnight), 1);
-            correspondingPieceTable.Add(typeof(WhiteBishop), 2);
-            correspondingPieceTable.Add(typeof(WhiteQueen), 3);
-            correspondingPieceTable.Add(typeof(WhiteKing), 4);
-            correspondingPieceTable.Add(typeof(WhitePawn), 5);
+            correspondingPieceTable.Add(WhiteRock.TypeId, 0);
+            correspondingPieceTable.Add(WhiteKnight.TypeId, 1);
+            correspondingPieceTable.Add(WhiteBishop.TypeId, 2);
+            correspondingPieceTable.Add(WhiteQueen.TypeId, 3);
+            correspondingPieceTable.Add(WhiteKing.TypeId, 4);
+            correspondingPieceTable.Add(WhitePawn.TypeId, 5);
 
-            correspondingPieceTable.Add(typeof(BlackRock), 6);
-            correspondingPieceTable.Add(typeof(BlackKnight), 7);
-            correspondingPieceTable.Add(typeof(BlackBishop), 8);
-            correspondingPieceTable.Add(typeof(BlackQueen), 9);
-            correspondingPieceTable.Add(typeof(BlackKing), 10);
-            correspondingPieceTable.Add(typeof(BlackPawn), 11);
+            correspondingPieceTable.Add(BlackRock.TypeId, 6);
+            correspondingPieceTable.Add(BlackKnight.TypeId, 7);
+            correspondingPieceTable.Add(BlackBishop.TypeId, 8);
+            correspondingPieceTable.Add(BlackQueen.TypeId, 9);
+            correspondingPieceTable.Add(BlackKing.TypeId, 10);
+            correspondingPieceTable.Add(BlackPawn.TypeId, 11);
 
             TranspositionTable = new Dictionary<long, HashEntry>();
             KillerMovesTable = new Dictionary<long, RefutationEntry>();
@@ -362,7 +359,7 @@
 
             foreach (var adjacent in adjacents)
             {
-                var currentPiece = adjacent.CurrentPiece;
+                var pieceInAdjacentSquare = adjacent.CurrentPiece;
 
                 var columnAMinusColumnB = adjacent.Column - square.Column;
                 var rowAMinusRowB = adjacent.Row - square.Row;
@@ -372,10 +369,10 @@
                 var diagonal = difColumn == 1 && difRow == 1;
                 var face = difColumn + difRow == 1;
 
-                if (board.IsValidSquare(adjacent.Row, adjacent.Column) && (currentPiece != null)
-                    && currentPiece.Color == oppositeColor)
+                if (board.IsValidSquare(adjacent.Row, adjacent.Column) && (pieceInAdjacentSquare != null)
+                    && pieceInAdjacentSquare.Color == oppositeColor)
                 {
-                    var currentPieceValue = currentPiece.Value;
+                    var currentPieceValue = pieceInAdjacentSquare.Value;
 
                     if (currentPieceValue == PieceValue.Pawn)
                     {
@@ -387,10 +384,10 @@
                         }
                     }
 
-                    var diaFace = diagonal || face;
+                    var diagonalOrFacing = diagonal || face;
 
-                    if ((currentPieceValue == PieceValue.King && diaFace)
-                        || (currentPieceValue == PieceValue.Queen && diaFace)
+                    if ((currentPieceValue == PieceValue.King && diagonalOrFacing)
+                        || (currentPieceValue == PieceValue.Queen && diagonalOrFacing)
                         || (currentPieceValue == PieceValue.Rock && face)
                         || (currentPieceValue == PieceValue.Bishop && diagonal))
                     {
@@ -398,7 +395,7 @@
                     }
                 }
 
-                if (currentPiece != null)
+                if (pieceInAdjacentSquare != null)
                 {
                     continue;
                 }
@@ -765,15 +762,15 @@
 
         public void XorSquare(Board board, int column, int row, Piece piece)
         {
-            var numberOfSquare = (row * 8) + column; // TRY NOT TO WORK WITH TYPES BECAUSE OF ITS SLOW PERFORMANCE?!?!?
-            long hashValue = board.RandomPieceValues[correspondingPieceTable[piece.GetType()], numberOfSquare];
+            var numberOfSquare = (row * 8) + column;
+            long hashValue = board.RandomPieceValues[correspondingPieceTable[piece.GetTypeId()], numberOfSquare];
 
             board.HashBoard ^= hashValue;
         }
 
         private void MakeCastle(Board board, int dir, int row) // dir <- = 0 | 1 = ->
         {
-            if (row == 0)
+            if (IsToLeft(row))
             {
                 board.WhiteHasCastled = true;
             }
@@ -803,6 +800,11 @@
                 board.BlackSquaresWithPieces.Remove(square.Identifier);
                 board.BlackSquaresWithPieces.Add(nextSquare.Identifier, nextSquare);
             }
+        }
+
+        private bool IsToLeft(int row)
+        {
+            return row == 0;
         }
 
         public void UndoMove(
@@ -873,6 +875,7 @@
                 {
                     board.BlackSquaresWithPieces.Add(sourceSquare.Identifier, sourceSquare);
                 }
+
                 if (pieceToReset != null)
                 {
                     board.MaterialWhite += (int)pieceToReset.Value;
@@ -920,18 +923,22 @@
             var move = new Move(dirCastle == 0 ? 3 : -2, 0);
             var op = new Operator(move, sourceSquare);
 
+            Piece pa= null;
+
+            op.Operate(board, out pa);
+
             Piece pi = null;
             op.Undo(board, nextSquare, sourceSquare, pi, new bool[] { false });
             var color = sourceSquare.CurrentPiece.Color;
 
             if (color == PieceColor.White)
             {
-                board.WhiteSquaresWithPieces.Add(sourceSquare.Identifier, sourceSquare);
+                board.WhiteSquaresWithPieces[sourceSquare.Identifier] = sourceSquare;
                 board.WhiteSquaresWithPieces.Remove(nextSquare.Identifier);
             }
             else
             {
-                board.BlackSquaresWithPieces.Add(sourceSquare.Identifier, sourceSquare);
+                board.BlackSquaresWithPieces[sourceSquare.Identifier] = sourceSquare;
                 board.BlackSquaresWithPieces.Remove(nextSquare.Identifier);
             }
         }

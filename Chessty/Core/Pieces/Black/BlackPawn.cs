@@ -4,9 +4,12 @@
     using System.Collections.Generic;
     using Chessty.Enumeration;
     using Chessty.Structure;
+    using System;
 
     public class BlackPawn : Pawn
     {
+        public static Guid TypeId { get; } = Guid.NewGuid();
+
         private static readonly List<Move> Moves = new List<Move> {
                 new PawnMove(PawnMoveType.EatLeft, -1, -1),
                 new PawnMove(PawnMoveType.EatRight, 1, -1),
@@ -21,6 +24,11 @@
         public override List<Move> GetMoves()
         {
             return Moves;
+        }
+
+        public override Guid GetTypeId()
+        {
+            return TypeId;
         }
 
         public override string ToString()

@@ -8,6 +8,7 @@
     using System.Collections.Generic;
 
     using Chessty.Structure;
+    using System;
 
     public class Bishop : Piece, INotPawnOrKingPiece
     {
@@ -61,6 +62,11 @@
         public override List<Move> GetMoves()
         {
             return ListMoves;
+        }
+
+        public override Guid GetTypeId()
+        {
+            return Guid.Empty;
         }
 
         public override int PieceIdentifier
